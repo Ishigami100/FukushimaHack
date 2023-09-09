@@ -1,13 +1,19 @@
 from pyqldb.config.retry_config import RetryConfig
 from pyqldb.driver.qldb_driver import QldbDriver
+from flask import Flask
 
-def create_table(transaction_executor):
-    print("Creating a table")
-    transaction_executor.execute_statement("CREATE TABLE People")
+retry_config = RetryConfig(retry_limit=3)
+qldb_driver = QldbDriver("quick-start", retry_config=retry_config)
+app = Flask(__name__)
 
-def create_index(transaction_executor):
-    print("Creating an index")
-    transaction_executor.execute_statement("CREATE INDEX ON People(lastName)")
+
+#def create_table(transaction_executor):
+ #   print("Creating a table")
+ #   transaction_executor.execute_statement("CREATE TABLE People")
+
+#def create_index(transaction_executor):
+ #   print("Creating an index")
+ #   transaction_executor.execute_statement("CREATE INDEX ON People(lastName)")
 
 def insert_documents(transaction_executor, arg_1):
     print("Inserting a document")
@@ -27,34 +33,54 @@ def update_documents(transaction_executor, age, lastName):
     transaction_executor.execute_statement("UPDATE People SET age = ? WHERE lastName = ?", age, lastName)
 
 # Configure retry limit to 3
-retry_config = RetryConfig(retry_limit=3)
+#retry_config = RetryConfig(retry_limit=3)
 
 # Initialize the driver
-print("Initializing the driver")
-qldb_driver = QldbDriver("quick-start", retry_config=retry_config)
+#print("Initializing the driver")
+#qldb_driver = QldbDriver("quick-start", retry_config=retry_config)
 
 # Create a table
-qldb_driver.execute_lambda(lambda executor: create_table(executor))
+#qldb_driver.execute_lambda(lambda executor: create_table(executor))
 
 # Create an index on the table
-qldb_driver.execute_lambda(lambda executor: create_index(executor))
+#qldb_driver.execute_lambda(lambda executor: create_index(executor))
 
 # Insert a document
-doc_1 = { 'firstName': "John",
-          'lastName': "Doe",
-          'age': 32,
-        }
 
-qldb_driver.execute_lambda(lambda x: insert_documents(x, doc_1))
-
-# Query the table
-qldb_driver.execute_lambda(lambda executor: read_documents(executor))
-
-# Update the document
 age = 42
 lastName = 'Doe'
 
-qldb_driver.execute_lambda(lambda x: update_documents(x, age, lastName))
+@app.route("/insert")
+def insert():
+    doc_1 = { 'firstName': "John",
+            'lastName': "Doe",
+            'age': 32,
+            }
+    qldb_driver.execute_lambda(lambda x: insert_documents(x, doc_1))
+
+# Query the table
+    qldb_driver.execute_lambda(lambda executor: read_documents(executor))
+    return "" ,200
+#ここまでinsert
+
+# Update the document
+#age = 42
+#lastName = 'Doe'
+
+@app.route("/update")
+def update():
+
+    qldb_driver.execute_lambda(lambda x: update_documents(x, age, lastName))
+    qldb_driver.execute_lambda(lambda executor: read_documents(executor))
+
+    return "" ,200
+
+#age = 42
+#lastName = 'Doe'
+#qldb_driver.execute_lambda(lambda x: update_documents(x, age, lastName))
 
 # Query the table for the updated document
-qldb_driver.execute_lambda(lambda executor: read_documents(executor))
+#qldb_driver.execute_lambda(lambda executor: read_documents(executor))
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000, debug=True)
