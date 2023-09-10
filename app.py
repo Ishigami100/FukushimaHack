@@ -1,6 +1,8 @@
 from pyqldb.config.retry_config import RetryConfig
 from pyqldb.driver.qldb_driver import QldbDriver
 from flask import Flask
+from flask import render_template
+
 
 retry_config = RetryConfig(retry_limit=3)
 qldb_driver = QldbDriver("quick-start", retry_config=retry_config)
@@ -81,6 +83,10 @@ def update():
 
 # Query the table for the updated document
 #qldb_driver.execute_lambda(lambda executor: read_documents(executor))
+
+@app.route("/form/fukushima")
+def fukushima():
+    return render_template("form_hukushima.html")
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
