@@ -1,7 +1,7 @@
 from pyqldb.config.retry_config import RetryConfig
 from pyqldb.driver.qldb_driver import QldbDriver
 from flask import Flask
-from flask import render_template
+from flask import render_template,request, redirect
 
 
 retry_config = RetryConfig(retry_limit=3)
@@ -21,9 +21,9 @@ def insert_documents(transaction_executor, arg_1):
     print("Inserting a document")
     transaction_executor.execute_statement("INSERT INTO People ?", arg_1)
 
-def read_documents(transaction_executor):
+def read_documents(transaction_executor,str):
     print("Querying the table")
-    cursor = transaction_executor.execute_statement("SELECT * FROM People WHERE lastName = ?", 'Doe')
+    cursor = transaction_executor.execute_statement("SELECT * FROM People WHERE lastName = ?",str)
                                                                                                                                           
     for doc in cursor:
         print(doc["firstName"])
@@ -52,17 +52,17 @@ def update_documents(transaction_executor, age, lastName):
 age = 42
 lastName = 'Doe'
 
-@app.route("/insert")
+@app.route("/insert",methods=['POST'])
 def insert():
-    doc_1 = { 'firstName': "John",
-            'lastName': "Doe",
-            'age': 32,
+    doc_1 = { 'firstName' :request.form["name"],
+            'lastName' :request.form["name-back"],
+            'age' :request.form["age"],
             }
     qldb_driver.execute_lambda(lambda x: insert_documents(x, doc_1))
-
+    print(request.form)
 # Query the table
-    qldb_driver.execute_lambda(lambda executor: read_documents(executor))
-    return "" ,200
+    qldb_driver.execute_lambda(lambda executor: read_documents(executor,request.form["name-back"]))
+    return redirect("https://lin.ee/6mtbeNe")
 #ここまでinsert
 
 # Update the document
@@ -86,7 +86,16 @@ def update():
 
 @app.route("/form/fukushima")
 def fukushima():
-    return render_template("form_hukushima.html")
+    return render_template("form_fukushima.html")
+@app.route("/")
+def main():
+    return render_template("index.html")
+@app.route("/purchase")
+def purchase():
+    return render_template("purchase.html")
+@app.route("/form/")
+def form():
+    return render_template("form.html")
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
